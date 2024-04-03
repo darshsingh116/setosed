@@ -95,7 +95,7 @@ function globalCost = ModifiedSolo(numRuns,funcName)
                 Shares(BestIndex).Position=bestSolution;
             end
             
-            fprintf('Minimum Cost in Iteration %d is %f \n', itr, globalCost)
+            %fprintf('Minimum Cost in Iteration %d is %f \n', itr, globalCost)
             alpha=alpha*alphaDump;
         
             if(mod(itr, 20) == 0)        
