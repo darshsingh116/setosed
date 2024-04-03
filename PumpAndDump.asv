@@ -1,0 +1,55 @@
+function [Shares, globalCost] = PumpAndDump(Shares, AlgorithmParams, ProblemParams, globalCost, ub, lb,beta)
+
+   % AlgorithmParams.NumOfShares = 200;
+    % Generate temporary new shares
+    TempShares = ModifiedGenerateNewShare(AlgorithmParams.NumOfShares, ProblemParams);
+    
+    % Update each TempShare's position around the best share within the specified range
+    bestIndex = find([Shares.Cost] == min([Shares.Cost]), 1);
+    bestPosition = Shares(bestIndex).Position;
+    
+    for i = 1:AlgorithmParams.NumOfShares
+       % Generate a random displacement vector within the specified range
+        x = (beta* rand() * (ub - lb)) * (bestPosition);
+        
+        % Calculate the new position by subtracting the random displacement from the best position
+        newPosition = bestPosition - x;
+        
+        % Check if any positions exceed the upper bound
+        exceedUpperBound = newPosition > ub;
+        if any(exceedUpperBound)
+            % Adjust positions exceeding upper bound by moving in the opposite direction
+            newPosition(exceedUpperBound) = ub - (newPosition(exceedUpperBound) - ub);
+        end
+        
+        % Check if any positions fall below the lower bound
+        belowLowerBound = newPosition < lb;
+        if any(belowLowerBound)
+            % Adjust positions below lower bound by moving in the opposite direction
+            newPosition(belowLowerBound) = lb + (lb - newPosition(belowLowerBound));
+        end
+
+        
+        % Update TempShare's position
+        TempShares(i, :) = newPosition;
+    end
+    
+    % Evaluate costs for TempShares
+    TempCosts = zeros(1, AlgorithmParams.NumOfShares);
+    for i = 1:AlgorithmParams.NumOfShares
+        TempCosts(i) = feval(ProblemParams.CostFuncName, TempShares(i,:));
+    end
+    
+    % Check if any TempShare has a better cost than the current best global cost
+    minTempCost = min(TempCosts);
+    if minTempCost < globalCost
+        % Replace worst share with the TempShare having the better cost
+        worstIndex = find([Shares.Cost] == max([Shares.Cost]), 1);
+        Shares(worstIndex).Position = TempShares(TempCosts == minTempCost, :);
+        Shares(worstIndex).Cost = minTempCost;
+        
+        % Update global cost
+        globalCost = minTempCost;
+    end
+
+end
